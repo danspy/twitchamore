@@ -1,0 +1,738 @@
+---
+const clientId = import.meta.env.PUBLIC_TWITCH_CLIENT_ID ?? '';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TwitchAmore – Multi-Stream Viewer</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Twitch Embed SDK (is:inline keeps it as a classic script so window.Twitch is set) -->
+    <script is:inline src="https://embed.twitch.tv/embed/v1.js"></script>
+    <style>
+      /* ── Reset & base ───────────────────────────────────────── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --bg:          #0e0e10;
+        --bg-header:   #18181b;
+        --bg-card:     #1f1f23;
+        --border:      #2d2d35;
+        --accent:      #9147ff;
+        --accent-hov:  #a970ff;
+        --text:        #efeff1;
+        --text-dim:    #adadb8;
+        --danger:      #e91916;
+        --header-h:    58px;
+        --bar-h:       52px;
+      }
+
+      html, body { height: 100%; overflow: hidden; }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      /* ── App shell ──────────────────────────────────────────── */
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      /* ── Header ─────────────────────────────────────────────── */
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px;
+        height: var(--header-h);
+        background: var(--bg-header);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        z-index: 100;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: var(--accent);
+        white-space: nowrap;
+        text-decoration: none;
+      }
+      .logo svg { flex-shrink: 0; }
+
+      .add-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        max-width: 480px;
+      }
+
+      .add-form input {
+        flex: 1;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text);
+        padding: 7px 12px;
+        font-size: 0.875rem;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .add-form input:focus { border-color: var(--accent); }
+      .add-form input::placeholder { color: var(--text-dim); }
+
+      .header-auth { margin-left: auto; }
+
+      /* ── Buttons ─────────────────────────────────────────────── */
+      .btn {
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 7px 14px;
+        transition: background 0.15s, opacity 0.15s;
+        white-space: nowrap;
+      }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-hov); }
+      .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+      .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+      }
+      .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+      .icon-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 4px;
+        font-size: 1rem;
+        color: var(--text);
+        transition: background 0.15s;
+        line-height: 1;
+      }
+      .icon-btn:hover { background: rgba(255,255,255,0.12); }
+      .icon-btn.muted  { opacity: 0.55; }
+      .icon-btn.staged { color: var(--accent); }
+
+      /* ── Main ────────────────────────────────────────────────── */
+      .main {
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+        position: relative;
+      }
+
+      /* ── Empty state ─────────────────────────────────────────── */
+      #empty-state {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: var(--text-dim);
+        pointer-events: none;
+      }
+      #empty-state .empty-icon { font-size: 3rem; }
+      #empty-state p { font-size: 1rem; }
+      #empty-state small { font-size: 0.8rem; }
+
+      /* ── Streams container ───────────────────────────────────── */
+      #streams {
+        width: 100%;
+        height: 100%;
+        background: #000;
+      }
+
+      #streams.grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        grid-auto-rows: 1fr;
+        gap: 2px;
+      }
+
+      #streams.stage {
+        display: grid;
+        grid-template-columns: 3fr 1fr;
+        gap: 2px;
+      }
+
+      /* ── Stream card ─────────────────────────────────────────── */
+      .stream-card {
+        position: relative;
+        background: #000;
+        overflow: hidden;
+        min-height: 180px;
+      }
+
+      .embed-wrap {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Twitch embed iframe fills the wrap */
+      .embed-wrap iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      /* Overlay fades in on hover */
+      .card-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+        background: linear-gradient(
+          to bottom,
+          rgba(0,0,0,0.65) 0%,
+          transparent 35%,
+          transparent 65%,
+          rgba(0,0,0,0.5) 100%
+        );
+      }
+      .stream-card:hover .card-overlay { opacity: 1; }
+
+      .overlay-top,
+      .overlay-bottom {
+        display: flex;
+        align-items: center;
+        pointer-events: all;
+      }
+      .overlay-top { justify-content: space-between; }
+      .overlay-bottom { justify-content: flex-start; }
+
+      .card-label {
+        font-weight: 700;
+        font-size: 0.875rem;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+      }
+      .card-actions { display: flex; gap: 2px; }
+
+      /* Stage border highlight */
+      .stream-card.is-stage::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border: 2px solid var(--accent);
+        pointer-events: none;
+      }
+
+      /* ── Control bar ─────────────────────────────────────────── */
+      #ctrl-bar {
+        display: none;
+        align-items: center;
+        gap: 4px;
+        padding: 0 12px;
+        height: var(--bar-h);
+        background: var(--bg-header);
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+      #ctrl-bar::-webkit-scrollbar { height: 4px; }
+      #ctrl-bar::-webkit-scrollbar-thumb { background: var(--border); }
+
+      .ctrl-item {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 4px 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .ctrl-item.is-stage { border-color: var(--accent); }
+
+      .ctrl-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-dim);
+        margin-right: 4px;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ── Auth / user ─────────────────────────────────────────── */
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid var(--accent);
+        object-fit: cover;
+      }
+      .display-name { font-size: 0.875rem; font-weight: 600; }
+      .cfg-note { font-size: 0.75rem; color: var(--text-dim); }
+
+      /* ── Responsive tweaks ───────────────────────────────────── */
+      @media (max-width: 600px) {
+        .logo span { display: none; }
+        .add-form { max-width: 100%; }
+        .header { gap: 8px; padding: 0 10px; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app">
+      <!-- ── Header ──────────────────────────────────────────── -->
+      <header class="header">
+        <a class="logo" href="/">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+          </svg>
+          <span>TwitchAmore</span>
+        </a>
+
+        <form class="add-form" id="add-form" autocomplete="off">
+          <input
+            id="channel-input"
+            type="text"
+            placeholder="Channel name…"
+            maxlength="25"
+            aria-label="Twitch channel name"
+            spellcheck="false"
+          />
+          <button type="submit" class="btn btn-primary btn-sm">Add Stream</button>
+        </form>
+
+        <div class="header-auth" id="auth-section"></div>
+      </header>
+
+      <!-- ── Main area ────────────────────────────────────────── -->
+      <main class="main" id="main">
+        <!-- Empty state -->
+        <div id="empty-state">
+          <span class="empty-icon">🎮</span>
+          <p>Add a channel above to start watching!</p>
+          <small>Type a Twitch username and press Enter or click "Add Stream"</small>
+        </div>
+
+        <!-- Stream cards are inserted here by JS -->
+        <div id="streams" class="grid"></div>
+      </main>
+
+      <!-- ── Control bar ──────────────────────────────────────── -->
+      <footer id="ctrl-bar" aria-label="Stream controls"></footer>
+    </div>
+
+    <script define:vars={{ clientId }}>
+      /* ────────────────────────────────────────────────────────────
+       *  TwitchAmore – client-side logic
+       * ──────────────────────────────────────────────────────────── */
+
+      // ── Config ─────────────────────────────────────────────────
+      const TWITCH_CLIENT_ID = clientId;
+      const REDIRECT_URI = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/';
+
+      // ── State ──────────────────────────────────────────────────
+      let streams     = [];            // string[]  – ordered channel list
+      let stageChannel = null;         // string | null
+      let mutedSet    = new Set();     // Set<string>
+      let embeds      = {};            // { [ch]: { embed, player } }
+      let user        = null;          // Twitch user object | null
+      let token       = null;          // OAuth token | null
+
+      // ── Persistence ────────────────────────────────────────────
+      function save() {
+        try {
+          localStorage.setItem('ta_streams', JSON.stringify(streams));
+          localStorage.setItem('ta_muted',   JSON.stringify([...mutedSet]));
+          if (stageChannel) localStorage.setItem('ta_stage', stageChannel);
+          else               localStorage.removeItem('ta_stage');
+        } catch (_) {}
+      }
+
+      function load() {
+        try {
+          streams      = JSON.parse(localStorage.getItem('ta_streams') || '[]');
+          mutedSet     = new Set(JSON.parse(localStorage.getItem('ta_muted') || '[]'));
+          stageChannel = localStorage.getItem('ta_stage') || null;
+          token        = localStorage.getItem('ta_token')  || null;
+          if (stageChannel && !streams.includes(stageChannel)) stageChannel = null;
+        } catch (_) {
+          streams = []; mutedSet = new Set(); stageChannel = null; token = null;
+        }
+      }
+
+      // ── Auth ───────────────────────────────────────────────────
+      async function handleOAuthCallback() {
+        const hash = window.location.hash;
+        if (!hash.includes('access_token=')) return;
+        const params = new URLSearchParams(hash.slice(1));
+        const t = params.get('access_token');
+        if (t) {
+          token = t;
+          localStorage.setItem('ta_token', token);
+          window.history.replaceState({}, '', window.location.pathname);
+          await fetchUser();
+        }
+      }
+
+      async function fetchUser() {
+        if (!token || !TWITCH_CLIENT_ID) return;
+        try {
+          const res = await fetch('https://api.twitch.tv/helix/users', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Client-Id': TWITCH_CLIENT_ID,
+            },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            user = data.data[0] || null;
+          } else {
+            token = null; user = null;
+            localStorage.removeItem('ta_token');
+          }
+        } catch (e) {
+          /* Network error – keep token; auth will retry on next load */
+          console.warn('[TwitchAmore] fetchUser network error:', e);
+        }
+      }
+
+      function login() {
+        if (!TWITCH_CLIENT_ID) {
+          alert('Twitch Client ID is not configured.\nSee README for setup instructions.');
+          return;
+        }
+        const scope = 'user:read:email';
+        const url = 'https://id.twitch.tv/oauth2/authorize'
+          + `?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}`
+          + `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`
+          + `&response_type=token`
+          + `&scope=${encodeURIComponent(scope)}`;
+        window.location.href = url;
+      }
+
+      function logout() {
+        token = null; user = null;
+        localStorage.removeItem('ta_token');
+        renderAuth();
+      }
+
+      // ── Stream management ──────────────────────────────────────
+      function addStream(raw) {
+        const channel = raw.trim().toLowerCase();
+        if (!channel) return;
+        if (streams.includes(channel)) {
+          alert(`"${channel}" is already in your stream list.`);
+          return;
+        }
+        streams.push(channel);
+        save();
+        createCard(channel);
+        updateEmpty();
+        applyLayout();
+        renderBar();
+      }
+
+      function removeStream(channel) {
+        streams = streams.filter(c => c !== channel);
+        mutedSet.delete(channel);
+        if (stageChannel === channel) stageChannel = null;
+        delete embeds[channel];
+        document.getElementById(`card-${channel}`)?.remove();
+        save();
+        updateEmpty();
+        applyLayout();
+        renderBar();
+      }
+
+      function toggleMute(channel) {
+        if (mutedSet.has(channel)) {
+          mutedSet.delete(channel);
+          setMuted(channel, false);
+        } else {
+          mutedSet.add(channel);
+          setMuted(channel, true);
+        }
+        save();
+        refreshMuteUI(channel);
+      }
+
+      function setMuted(channel, muted) {
+        embeds[channel]?.player?.setMuted(muted);
+      }
+
+      function setStage(channel) {
+        stageChannel = stageChannel === channel ? null : channel;
+        save();
+        applyLayout();
+        renderBar();
+      }
+
+      // ── Card creation ──────────────────────────────────────────
+      function createCard(channel) {
+        const container = document.getElementById('streams');
+        const isMuted   = mutedSet.has(channel);
+        const isStage   = stageChannel === channel;
+
+        const card = document.createElement('div');
+        card.className = 'stream-card' + (isStage ? ' is-stage' : '');
+        card.id = `card-${channel}`;
+
+        const embedWrap = document.createElement('div');
+        embedWrap.className = 'embed-wrap';
+        embedWrap.id = `embed-${channel}`;
+
+        card.innerHTML += `
+          <div class="card-overlay" aria-hidden="true">
+            <div class="overlay-top">
+              <span class="card-label">${escHtml(channel)}</span>
+              <div class="card-actions">
+                <button class="icon-btn stage-btn${isStage ? ' staged' : ''}"
+                        data-ch="${escHtml(channel)}"
+                        title="${isStage ? 'Exit stage' : 'Set as stage'}">
+                  ${isStage ? '⬜' : '⬛'}
+                </button>
+                <button class="icon-btn remove-btn"
+                        data-ch="${escHtml(channel)}"
+                        title="Remove stream">✕</button>
+              </div>
+            </div>
+            <div class="overlay-bottom">
+              <button class="icon-btn mute-btn${isMuted ? ' muted' : ''}"
+                      data-ch="${escHtml(channel)}"
+                      title="${isMuted ? 'Unmute' : 'Mute'}">
+                ${isMuted ? '🔇' : '🔊'}
+              </button>
+            </div>
+          </div>`;
+
+        card.insertBefore(embedWrap, card.firstChild);
+        container.appendChild(card);
+
+        // Bind card overlay events
+        card.querySelector('.stage-btn').addEventListener('click',  () => setStage(channel));
+        card.querySelector('.remove-btn').addEventListener('click', () => removeStream(channel));
+        card.querySelector('.mute-btn').addEventListener('click',   () => toggleMute(channel));
+
+        // Create Twitch embed
+        /* global Twitch */
+        const embed = new Twitch.Embed(`embed-${channel}`, {
+          channel,
+          width:    '100%',
+          height:   '100%',
+          layout:   'video',
+          autoplay: true,
+          muted:    isMuted,
+          parent:   [window.location.hostname || 'localhost'],
+        });
+
+        const rec = { embed, player: null };
+        embeds[channel] = rec;
+
+        embed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
+          rec.player = embed.getPlayer();
+          rec.player.setMuted(mutedSet.has(channel));
+        });
+      }
+
+      // ── Layout ─────────────────────────────────────────────────
+      function applyLayout() {
+        const container = document.getElementById('streams');
+        const sideChannels = streams.filter(c => c !== stageChannel);
+
+        if (stageChannel && streams.includes(stageChannel) && sideChannels.length > 0) {
+          // Stage mode: 2-column grid; stage spans all rows in col 1
+          const rows = sideChannels.length;
+          container.className = 'stage';
+          container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+          const stageCard = document.getElementById(`card-${stageChannel}`);
+          if (stageCard) {
+            stageCard.style.gridColumn = '1';
+            stageCard.style.gridRow    = `1 / span ${rows}`;
+            stageCard.classList.add('is-stage');
+          }
+
+          sideChannels.forEach((ch, i) => {
+            const c = document.getElementById(`card-${ch}`);
+            if (!c) return;
+            c.style.gridColumn = '2';
+            c.style.gridRow    = `${i + 1}`;
+            c.classList.remove('is-stage');
+          });
+        } else {
+          // Grid mode
+          container.className = 'grid';
+          container.style.gridTemplateRows = '';
+          streams.forEach(ch => {
+            const c = document.getElementById(`card-${ch}`);
+            if (!c) return;
+            c.style.gridColumn = '';
+            c.style.gridRow    = '';
+            c.classList.toggle('is-stage', ch === stageChannel);
+          });
+        }
+
+        // Refresh stage-button icon inside each card overlay
+        streams.forEach(ch => {
+          const btn = document.querySelector(`#card-${CSS.escape(ch)} .stage-btn`);
+          if (!btn) return;
+          const on = ch === stageChannel;
+          btn.textContent = on ? '⬜' : '⬛';
+          btn.title       = on ? 'Exit stage' : 'Set as stage';
+          btn.classList.toggle('staged', on);
+        });
+      }
+
+      // ── Control bar ────────────────────────────────────────────
+      function renderBar() {
+        const bar = document.getElementById('ctrl-bar');
+        if (!bar) return;
+
+        if (streams.length === 0) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+
+        bar.style.display = 'flex';
+        bar.innerHTML = streams.map(ch => {
+          const muted  = mutedSet.has(ch);
+          const staged = ch === stageChannel;
+          return `
+            <div class="ctrl-item${staged ? ' is-stage' : ''}" id="ctrl-${ch}">
+              <span class="ctrl-label" title="${escHtml(ch)}">${escHtml(ch)}</span>
+              <button class="icon-btn mute-btn${muted ? ' muted' : ''}"
+                      data-ch="${escHtml(ch)}"
+                      title="${muted ? 'Unmute' : 'Mute'}">
+                ${muted ? '🔇' : '🔊'}
+              </button>
+              <button class="icon-btn stage-btn${staged ? ' staged' : ''}"
+                      data-ch="${escHtml(ch)}"
+                      title="${staged ? 'Exit stage' : 'Set as stage'}">
+                ${staged ? '⬜' : '⬛'}
+              </button>
+              <button class="icon-btn remove-btn"
+                      data-ch="${escHtml(ch)}"
+                      title="Remove stream">✕</button>
+            </div>`;
+        }).join('');
+
+        bar.querySelectorAll('.mute-btn').forEach(b =>
+          b.addEventListener('click', () => toggleMute(b.dataset.ch)));
+        bar.querySelectorAll('.stage-btn').forEach(b =>
+          b.addEventListener('click', () => setStage(b.dataset.ch)));
+        bar.querySelectorAll('.remove-btn').forEach(b =>
+          b.addEventListener('click', () => removeStream(b.dataset.ch)));
+      }
+
+      // ── Mute UI refresh (without full re-render) ───────────────
+      function refreshMuteUI(channel) {
+        const muted = mutedSet.has(channel);
+        [
+          document.querySelector(`#card-${CSS.escape(channel)} .mute-btn`),
+          document.querySelector(`#ctrl-${channel} .mute-btn`),
+        ].forEach(btn => {
+          if (!btn) return;
+          btn.textContent = muted ? '🔇' : '🔊';
+          btn.title       = muted ? 'Unmute' : 'Mute';
+          btn.classList.toggle('muted', muted);
+        });
+      }
+
+      // ── Auth render ────────────────────────────────────────────
+      function renderAuth() {
+        const el = document.getElementById('auth-section');
+        if (!el) return;
+
+        if (user) {
+          el.innerHTML = `
+            <div class="user-info">
+              <img class="avatar" src="${escHtml(user.profile_image_url)}"
+                   alt="${escHtml(user.display_name)}" />
+              <span class="display-name">${escHtml(user.display_name)}</span>
+              <button class="btn btn-ghost btn-sm" id="logout-btn">Sign out</button>
+            </div>`;
+          document.getElementById('logout-btn').addEventListener('click', logout);
+        } else if (TWITCH_CLIENT_ID) {
+          el.innerHTML = `
+            <button class="btn btn-primary btn-sm" id="login-btn">
+              Login with Twitch
+            </button>`;
+          document.getElementById('login-btn').addEventListener('click', login);
+        } else {
+          el.innerHTML = `<span class="cfg-note">Set PUBLIC_TWITCH_CLIENT_ID to enable login</span>`;
+        }
+      }
+
+      // ── Helpers ────────────────────────────────────────────────
+      function updateEmpty() {
+        const es = document.getElementById('empty-state');
+        if (es) es.style.display = streams.length === 0 ? 'flex' : 'none';
+      }
+
+      function escHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      // ── Init ───────────────────────────────────────────────────
+      async function init() {
+        load();
+
+        // Handle Twitch OAuth implicit-grant callback
+        await handleOAuthCallback();
+        if (token && !user) await fetchUser();
+
+        renderAuth();
+
+        // Restore streams
+        const saved = [...streams];
+        streams = [];
+        saved.forEach(ch => {
+          streams.push(ch);
+          createCard(ch);
+        });
+
+        updateEmpty();
+        applyLayout();
+        renderBar();
+
+        // Add-stream form
+        document.getElementById('add-form').addEventListener('submit', e => {
+          e.preventDefault();
+          const input = document.getElementById('channel-input');
+          addStream(input.value);
+          input.value = '';
+        });
+      }
+
+      init();
+    </script>
+  </body>
+</html>
