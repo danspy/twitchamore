@@ -135,6 +135,8 @@ const clientId = import.meta.env.PUBLIC_TWITCH_CLIENT_ID ?? '';
         overflow: hidden;
         min-height: 0;
         position: relative;
+        display: flex;
+        flex-direction: column;
       }
 
       /* ── Empty state ─────────────────────────────────────────── */
@@ -156,7 +158,8 @@ const clientId = import.meta.env.PUBLIC_TWITCH_CLIENT_ID ?? '';
       /* ── Streams container ───────────────────────────────────── */
       #streams {
         width: 100%;
-        height: 100%;
+        flex: 1;
+        min-height: 0;
         background: #000;
       }
 
@@ -179,11 +182,14 @@ const clientId = import.meta.env.PUBLIC_TWITCH_CLIENT_ID ?? '';
         background: #000;
         overflow: hidden;
         min-height: 180px;
+        display: flex;
+        flex-direction: column;
       }
 
       .embed-wrap {
         width: 100%;
-        height: 100%;
+        flex: 1;
+        min-height: 0;
       }
 
       /* Twitch embed iframe fills the wrap */
