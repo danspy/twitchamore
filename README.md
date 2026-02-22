@@ -5,6 +5,7 @@ A simple multi-stream Twitch viewer built with [Astro](https://astro.build).
 ## Features
 
 - 🎮 Watch **multiple Twitch streams** simultaneously in a responsive grid
+- 🔎 **Channel autocomplete** while typing (with **LIVE/OFFLINE** status)
 - 🔊 **Mute / unmute** individual streams at a glance from the control bar or stream overlay
 - ⬛ **Stage mode** – feature one stream prominently (75 %) while the others stack in a sidebar
 - 🔐 **Twitch login** (optional) – sign in to show your display name & avatar via Twitch OAuth
@@ -69,7 +70,7 @@ Open [http://localhost:4321](http://localhost:4321).
 
 | Action | How |
 |--------|-----|
-| Add a stream | Type a Twitch username in the header and press **Enter** or click **Add Stream** |
+| Add a stream | Type a Twitch username in the header (autocomplete shows channel suggestions + live status), then press **Enter** or click **Add Stream** |
 | Remove a stream | Hover over the stream → click **✕**, or click **✕** in the control bar |
 | Mute / unmute | Hover over the stream → click **🔊/🔇**, or click in the control bar |
 | Stage a stream | Hover over the stream → click **⬛**, or click in the control bar. Click again to exit stage mode |

@@ -76,6 +76,12 @@
         align-items: center;
         gap: 8px;
         flex: 1;
+        max-width: 100%;
+      }
+
+      .add-form-wrap {
+        position: relative;
+        flex: 1;
         max-width: 480px;
       }
 
@@ -92,6 +98,82 @@
       }
       .add-form input:focus { border-color: var(--accent); }
       .add-form input::placeholder { color: var(--text-dim); }
+
+      .search-suggest {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+        z-index: 250;
+        max-height: 280px;
+        overflow-y: auto;
+      }
+
+      .search-suggest.open { display: block; }
+
+      .suggest-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px;
+        border: none;
+        border-top: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .suggest-item:first-child { border-top: none; }
+      .suggest-item:hover,
+      .suggest-item.active { background: rgba(145,71,255,0.16); }
+
+      .suggest-main {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .suggest-name {
+        font-size: 0.88rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .suggest-login {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+      }
+
+      .suggest-status {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .suggest-status.live {
+        color: #fff;
+        background: var(--danger);
+        border-color: var(--danger);
+      }
+
+      .suggest-empty {
+        padding: 9px 10px;
+        font-size: 0.8rem;
+        color: var(--text-dim);
+      }
 
       .header-auth { margin-left: auto; }
 
@@ -323,6 +405,7 @@
         flex-shrink: 0;
       }
       #add-bar.open { display: flex; }
+      #add-bar .add-form-wrap { flex: 1; max-width: 100%; }
       #add-bar .add-form { flex: 1; max-width: 100%; }
 
       /* ── Responsive tweaks ───────────────────────────────────── */
@@ -334,11 +417,16 @@
 
       @media (max-width: 900px) {
         .logo span { display: none; }
-        .header .add-form { display: none; }
+        .header .add-form-wrap { display: none; }
         #add-toggle-btn { display: inline-flex; }
         #layout-btn { display: none; }
         .btn-text { display: none; }
         .header { gap: 8px; padding: 0 10px; }
+
+        /* Prevent mobile browsers from zooming on focused inputs */
+        .add-form input {
+          font-size: 16px;
+        }
       }
 
       /* ── Focus-visible ───────────────────────────────────────── */
@@ -370,17 +458,20 @@
           <span>TwitchAmore</span>
         </a>
 
-        <form class="add-form" id="add-form" autocomplete="off">
-          <input
-            id="channel-input"
-            type="text"
-            placeholder="Channel name…"
-            maxlength="25"
-            aria-label="Twitch channel name"
-            spellcheck="false"
-          />
-          <button type="submit" class="btn btn-primary btn-sm">Add Stream</button>
-        </form>
+        <div class="add-form-wrap">
+          <form class="add-form" id="add-form" autocomplete="off">
+            <input
+              id="channel-input"
+              type="text"
+              placeholder="Channel name…"
+              maxlength="25"
+              aria-label="Twitch channel name"
+              spellcheck="false"
+            />
+            <button type="submit" class="btn btn-primary btn-sm">Add Stream</button>
+          </form>
+          <div class="search-suggest" id="search-suggest" role="listbox" aria-label="Channel suggestions"></div>
+        </div>
 
         <div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0;">
           <button class="btn btn-primary btn-sm" id="add-toggle-btn" title="Add stream" aria-label="Add stream" aria-expanded="false">+</button>
@@ -394,17 +485,20 @@
 
       <!-- ── Mobile add bar ──────────────────────────────────── -->
       <div id="add-bar" aria-hidden="true">
-        <form id="add-form-mobile" class="add-form" autocomplete="off">
-          <input
-            id="channel-input-mobile"
-            type="text"
-            placeholder="Channel name…"
-            maxlength="25"
-            aria-label="Twitch channel name"
-            spellcheck="false"
-          />
-          <button type="submit" class="btn btn-primary btn-sm">Add</button>
-        </form>
+        <div class="add-form-wrap">
+          <form id="add-form-mobile" class="add-form" autocomplete="off">
+            <input
+              id="channel-input-mobile"
+              type="text"
+              placeholder="Channel name…"
+              maxlength="25"
+              aria-label="Twitch channel name"
+              spellcheck="false"
+            />
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+          </form>
+          <div class="search-suggest" id="search-suggest-mobile" role="listbox" aria-label="Channel suggestions"></div>
+        </div>
       </div>
 
       <!-- ── Main area ────────────────────────────────────────── -->
@@ -436,6 +530,22 @@
       let embeds       = {};       // { [ch]: { embed, player } }
       let dragSrc      = null;     // channel being dragged in ctrl-bar
       let layoutMode   = 'stage';  // 'stage' | 'grid'
+      const TWITCH_GQL_CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
+      const SEARCH_QUERY = `query ChannelTypeahead($q: String!) {
+        searchFor(userQuery: $q, platform: "web") {
+          channels {
+            edges {
+              item {
+                ... on User {
+                  login
+                  displayName
+                  stream { id }
+                }
+              }
+            }
+          }
+        }
+      }`;
 
       // ── Persistence ────────────────────────────────────────────
       function save() {
@@ -664,7 +774,23 @@
         // Reset height; only the 1-stream full-height branch sets it
         container.style.height = '';
 
-        if (w < 600) {
+        if (streams.length === 1) {
+          // ── 1 stream (all devices): full viewport height ─────────
+          container.className = 'grid';
+          container.style.gridTemplateColumns = '1fr';
+          container.style.gridTemplateRows    = '1fr';
+          container.style.gridAutoRows        = '';
+          container.style.height = 'calc(100dvh - var(--header-h) - var(--bar-h))';
+          const c = document.getElementById(`card-${streams[0]}`);
+          if (c) {
+            c.style.gridColumn  = '';
+            c.style.gridRow     = '';
+            c.style.order       = '';
+            c.style.aspectRatio = 'auto';
+            c.classList.toggle('is-stage', streams[0] === stageChannel);
+          }
+
+        } else if (w < 600) {
           // ── Mobile: single column, 16:9 aspect ratio ────────────
           container.className = 'grid';
           container.style.gridTemplateColumns = '';   // CSS forces 1fr
@@ -714,22 +840,6 @@
               c.style.aspectRatio = ''; // restore CSS rule
               c.classList.toggle('is-stage', false);
             });
-          }
-
-        } else if (streams.length === 1) {
-          // ── Desktop: 1 stream – full viewport height ─────────────
-          container.className = 'grid';
-          container.style.gridTemplateColumns = '1fr';
-          container.style.gridTemplateRows    = '1fr';
-          container.style.gridAutoRows        = '';
-          container.style.height = 'calc(100dvh - var(--header-h) - var(--bar-h))';
-          const c = document.getElementById(`card-${streams[0]}`);
-          if (c) {
-            c.style.gridColumn  = '';
-            c.style.gridRow     = '';
-            c.style.order       = '';
-            c.style.aspectRatio = 'auto';
-            c.classList.toggle('is-stage', streams[0] === stageChannel);
           }
 
         } else if (layoutMode === 'grid') {
@@ -953,6 +1063,148 @@
           .replace(/"/g, '&quot;');
       }
 
+      function setupChannelSuggest(inputId, listId, onPick = null) {
+        const input = document.getElementById(inputId);
+        const list  = document.getElementById(listId);
+        if (!(input instanceof HTMLInputElement) || !(list instanceof HTMLDivElement)) return () => {};
+        const inputEl = input;
+        const listEl = list;
+
+        let timer = null;
+        let reqId = 0;
+        let activeIndex = -1;
+        let results = [];
+
+        function closeSuggest() {
+          listEl.classList.remove('open');
+          listEl.innerHTML = '';
+          activeIndex = -1;
+          results = [];
+        }
+
+        function setActive(index) {
+          const items = [...listEl.querySelectorAll('.suggest-item')];
+          items.forEach((el, i) => el.classList.toggle('active', i === index));
+        }
+
+        function pick(index) {
+          const item = results[index];
+          if (!item) return;
+          addStream(item.login);
+          inputEl.value = '';
+          closeSuggest();
+          if (typeof onPick === 'function') onPick();
+        }
+
+        async function fetchSuggest(query) {
+          const currentReq = ++reqId;
+          listEl.innerHTML = '<div class="suggest-empty">Searching…</div>';
+          listEl.classList.add('open');
+
+          try {
+            const res = await fetch('https://gql.twitch.tv/gql', {
+              method: 'POST',
+              headers: {
+                'Client-Id': TWITCH_GQL_CLIENT_ID,
+                'Content-Type': 'text/plain;charset=UTF-8',
+              },
+              body: JSON.stringify({
+                operationName: 'ChannelTypeahead',
+                variables: { q: query },
+                query: SEARCH_QUERY,
+              }),
+            });
+
+            const payload = await res.json();
+            if (currentReq !== reqId) return;
+
+            const edges = payload?.data?.searchFor?.channels?.edges || [];
+            const seen = new Set();
+            results = edges
+              .map(e => e?.item)
+              .filter(Boolean)
+              .map(item => ({
+                login: item.login,
+                displayName: item.displayName || item.login,
+                isLive: Boolean(item.stream?.id),
+              }))
+              .filter(item => {
+                if (!item.login || seen.has(item.login)) return false;
+                seen.add(item.login);
+                return true;
+              })
+              .slice(0, 8);
+
+            if (!results.length) {
+              listEl.innerHTML = '<div class="suggest-empty">No channels found</div>';
+              return;
+            }
+
+            listEl.innerHTML = results.map((item, i) => `
+              <button type="button" class="suggest-item" data-index="${i}" role="option" aria-selected="false">
+                <span class="suggest-main">
+                  <span class="suggest-name">${escHtml(item.displayName)}</span>
+                  <span class="suggest-login">@${escHtml(item.login)}</span>
+                </span>
+                <span class="suggest-status${item.isLive ? ' live' : ''}">${item.isLive ? 'LIVE' : 'OFFLINE'}</span>
+              </button>
+            `).join('');
+
+            [...listEl.querySelectorAll('.suggest-item')].forEach(btn => {
+              btn.addEventListener('click', () => pick(Number(btn.getAttribute('data-index'))));
+            });
+            activeIndex = -1;
+          } catch (_) {
+            if (currentReq !== reqId) return;
+            listEl.innerHTML = '<div class="suggest-empty">Search is currently unavailable</div>';
+          }
+        }
+
+        input.addEventListener('input', () => {
+          clearTimeout(timer);
+          const query = inputEl.value.trim().toLowerCase();
+          if (query.length < 2) { closeSuggest(); return; }
+          timer = setTimeout(() => fetchSuggest(query), 220);
+        });
+
+        input.addEventListener('keydown', e => {
+          if (!listEl.classList.contains('open') || results.length === 0) return;
+
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = (activeIndex + 1) % results.length;
+            setActive(activeIndex);
+            return;
+          }
+
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = (activeIndex - 1 + results.length) % results.length;
+            setActive(activeIndex);
+            return;
+          }
+
+          if (e.key === 'Enter' && activeIndex >= 0) {
+            e.preventDefault();
+            pick(activeIndex);
+            return;
+          }
+
+          if (e.key === 'Escape') {
+            closeSuggest();
+          }
+        });
+
+        document.addEventListener('click', e => {
+          const target = e.target;
+          if (!(target instanceof Node)) return;
+          if (target === inputEl || listEl.contains(target)) return;
+          closeSuggest();
+        });
+
+        return closeSuggest;
+      }
+
       // ── Layout mode toggle ─────────────────────────────────────
       function toggleLayoutMode() {
         layoutMode = layoutMode === 'stage' ? 'grid' : 'stage';
@@ -1039,6 +1291,8 @@
       // ── Init ───────────────────────────────────────────────────
       function init() {
         load();
+        let closeDesktopSuggest = () => {};
+        let closeMobileSuggest = () => {};
 
         // Restore streams
         const saved = [...streams];
@@ -1057,8 +1311,10 @@
         document.getElementById('add-form').addEventListener('submit', e => {
           e.preventDefault();
           const input = document.getElementById('channel-input');
+          if (!(input instanceof HTMLInputElement)) return;
           addStream(input.value);
           input.value = '';
+          closeDesktopSuggest();
         });
 
         // Export / Import
@@ -1086,8 +1342,19 @@
         document.getElementById('add-form-mobile').addEventListener('submit', e => {
           e.preventDefault();
           const input = document.getElementById('channel-input-mobile');
+          if (!(input instanceof HTMLInputElement)) return;
           addStream(input.value);
           input.value = '';
+          closeMobileSuggest();
+          const bar = document.getElementById('add-bar');
+          bar.classList.remove('open');
+          bar.setAttribute('aria-hidden', 'true');
+          document.getElementById('add-toggle-btn').textContent = '+';
+          document.getElementById('add-toggle-btn').setAttribute('aria-expanded', 'false');
+        });
+
+        closeDesktopSuggest = setupChannelSuggest('channel-input', 'search-suggest');
+        closeMobileSuggest  = setupChannelSuggest('channel-input-mobile', 'search-suggest-mobile', () => {
           const bar = document.getElementById('add-bar');
           bar.classList.remove('open');
           bar.setAttribute('aria-hidden', 'true');
