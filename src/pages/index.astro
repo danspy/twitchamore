@@ -817,6 +817,8 @@
           snapToLive(stageChannel);
         }
 
+        // When a stream is staged, follow it in the chat sidebar
+        if (stageChannel) chatChannel = stageChannel;
         save();
         applyLayout();
         renderBar();
