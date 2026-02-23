@@ -1312,6 +1312,7 @@
                 save();
                 applyLayout();
                 renderBar();
+                renderChatTabs();
               }
             }
             dragSrc = null;
@@ -1587,6 +1588,8 @@
         }).join('');
         tabsEl.querySelectorAll('.chat-tab').forEach(btn =>
           btn.addEventListener('click', () => setChatChannel(btn.dataset.ch)));
+        // Scroll the active tab into view so it's always visible
+        tabsEl.querySelector('.chat-tab.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
       }
 
       function renderChatIframe() {
