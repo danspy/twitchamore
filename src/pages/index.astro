@@ -457,6 +457,53 @@
         outline: 2px solid var(--accent);
         outline-offset: 2px;
       }
+
+      /* ── Chat panel ──────────────────────────────────────────── */
+      .main.with-chat {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+
+      .main.with-chat #streams {
+        flex: 1;
+        min-width: 0;
+        width: auto;
+      }
+
+      #chat-panel {
+        display: none;
+        width: 340px;
+        flex-shrink: 0;
+        border-left: 1px solid var(--border);
+        background: var(--bg);
+        height: calc(100dvh - var(--header-h) - var(--bar-h));
+        position: sticky;
+        top: var(--header-h);
+        overflow: hidden;
+      }
+
+      #chat-panel.open { display: block; }
+
+      #chat-panel iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      @media (max-width: 900px) {
+        #chat-panel {
+          width: 100%;
+          height: 420px;
+          border-left: none;
+          border-top: 1px solid var(--border);
+          position: static;
+        }
+        .main.with-chat {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
     </style>
   </head>
 
