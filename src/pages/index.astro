@@ -586,16 +586,12 @@
       @media (min-width: 601px) {
         #app.chat-pinned .content-wrap {
           flex-direction: row;
-          height: calc(100dvh - var(--header-h) - var(--bar-h));
-          overflow: hidden;
-        }
-        #app.chat-pinned .main {
-          overflow-y: auto;
         }
         #app.chat-pinned #chat-sidebar {
-          position: static;
+          position: sticky;
+          top: var(--header-h);
           right: auto;
-          height: 100%;
+          height: calc(100dvh - var(--header-h) - var(--bar-h));
           box-shadow: none;
           transition: none;
           flex-shrink: 0;
