@@ -43,6 +43,7 @@
         display: flex;
         flex-direction: column;
         min-height: 100dvh;
+        padding-top: var(--header-h);
         padding-bottom: var(--bar-h);
       }
 
@@ -56,7 +57,11 @@
         background: var(--bg-header);
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
-        z-index: 100;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 200;
       }
 
       .logo {
@@ -226,6 +231,14 @@
       .ctrl-item.is-stage .wide-btn { display: inline-flex; }
 
       /* ── Main ────────────────────────────────────────────────── */
+      .content-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        position: relative;
+      }
+
       .main {
         flex: 1;
         overflow: visible;
@@ -415,7 +428,11 @@
         height: var(--bar-h);
         background: var(--bg-header);
         border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
+        position: fixed;
+        top: var(--header-h);
+        left: 0;
+        right: 0;
+        z-index: 190;
       }
       #add-bar.open { display: flex; }
       #add-bar .add-form-wrap { flex: 1; max-width: 100%; }
@@ -457,6 +474,139 @@
         outline: 2px solid var(--accent);
         outline-offset: 2px;
       }
+
+      /* ── Chat sidebar ────────────────────────────────────────── */
+      #chat-sidebar {
+        position: fixed;
+        top: var(--header-h);
+        right: -340px;
+        width: 340px;
+        height: calc(100dvh - var(--header-h) - var(--bar-h));
+        background: var(--bg-header);
+        border-left: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        z-index: 150;
+        transition: right 0.25s ease;
+        box-shadow: -4px 0 16px rgba(0,0,0,0.4);
+      }
+
+      #chat-sidebar.open { right: 0; }
+
+      .chat-sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 12px;
+        height: 44px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        gap: 8px;
+      }
+
+      .chat-sidebar-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-dim);
+        white-space: nowrap;
+      }
+
+      .chat-tabs {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        flex: 1;
+        scrollbar-width: none;
+        padding: 0 2px;
+      }
+      .chat-tabs::-webkit-scrollbar { display: none; }
+
+      .chat-tab {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 3px 9px;
+        white-space: nowrap;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+        flex-shrink: 0;
+      }
+      .chat-tab:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+      .chat-tab.active {
+        background: rgba(145,71,255,0.18);
+        border-color: var(--accent);
+        color: var(--text);
+      }
+
+      .chat-body {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .chat-body iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      .chat-empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        pointer-events: none;
+      }
+      .chat-empty .chat-empty-icon { font-size: 2rem; }
+
+      #chat-btn.chat-active {
+        background: rgba(145,71,255,0.2);
+        border-color: var(--accent);
+        color: var(--text);
+      }
+
+      /* Pin button — hidden on mobile, shown on tablet/desktop */
+      #chat-pin-btn { display: none; }
+
+      @media (min-width: 601px) {
+        #chat-pin-btn { display: inline-flex; }
+        #chat-pin-btn.pinned { color: var(--accent); }
+      }
+
+      /* ── Pinned mode (tablet/desktop only) ───────────────────── */
+      @media (min-width: 601px) {
+        #app.chat-pinned .content-wrap {
+          flex-direction: row;
+        }
+        #app.chat-pinned #chat-sidebar {
+          position: sticky;
+          top: var(--header-h);
+          right: auto;
+          height: calc(100dvh - var(--header-h) - var(--bar-h));
+          box-shadow: none;
+          transition: none;
+          flex-shrink: 0;
+        }
+      }
+
+      @media (max-width: 600px) {
+        #chat-sidebar {
+          width: 100%;
+          right: -100%;
+          border-left: none;
+          border-top: 1px solid var(--border);
+        }
+        #chat-sidebar.open { right: 0; }
+      }
     </style>
   </head>
 
@@ -488,6 +638,7 @@
 
         <div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0;">
           <button class="btn btn-primary btn-sm" id="add-toggle-btn" title="Add stream" aria-label="Add stream" aria-expanded="false">+</button>
+          <button class="btn btn-ghost btn-sm" id="chat-btn" title="Open chat sidebar" aria-expanded="false" aria-controls="chat-sidebar"><span class="btn-icon">💬</span><span class="btn-text">Chat</span></button>
           <button class="btn btn-ghost btn-sm" id="layout-btn" title="Switch between stage and grid layout"><span class="btn-icon">⊞</span><span class="btn-text">Grid</span></button>
           <button class="btn btn-ghost btn-sm" id="mute-all-btn" title="Mute / unmute all streams"><span class="btn-icon">🔇</span><span class="btn-text">Mute All</span></button>
           <button class="btn btn-ghost btn-sm" id="export-btn" title="Export layout to JSON"><span class="btn-icon">⬇</span><span class="btn-text">Export</span></button>
@@ -514,18 +665,31 @@
         </div>
       </div>
 
-      <!-- ── Main area ────────────────────────────────────────── -->
-      <main class="main" id="main">
-        <!-- Empty state -->
-        <div id="empty-state">
-          <span class="empty-icon">🎮</span>
-          <p>Add a channel above to start watching!</p>
-          <small>Type a Twitch username and press Enter or click "Add Stream"</small>
-        </div>
+      <!-- ── Main area + Chat sidebar (wrapped for pinned layout) ─ -->
+      <div class="content-wrap">
+        <main class="main" id="main">
+          <!-- Empty state -->
+          <div id="empty-state">
+            <span class="empty-icon">🎮</span>
+            <p>Add a channel above to start watching!</p>
+            <small>Type a Twitch username and press Enter or click "Add Stream"</small>
+          </div>
 
-        <!-- Stream cards are inserted here by JS -->
-        <div id="streams" class="grid" role="region" aria-label="Active streams"></div>
-      </main>
+          <!-- Stream cards are inserted here by JS -->
+          <div id="streams" class="grid" role="region" aria-label="Active streams"></div>
+        </main>
+
+        <!-- ── Chat sidebar ──────────────────────────────────── -->
+        <aside id="chat-sidebar" aria-label="Chat sidebar" aria-hidden="true">
+          <div class="chat-sidebar-header">
+            <span class="chat-sidebar-title">Chat</span>
+            <div class="chat-tabs" id="chat-tabs" role="tablist" aria-label="Select stream chat"></div>
+            <button class="icon-btn" id="chat-pin-btn" title="Pin sidebar" aria-label="Pin chat sidebar">📌</button>
+            <button class="icon-btn" id="chat-close-btn" title="Close chat" aria-label="Close chat sidebar">✕</button>
+          </div>
+          <div class="chat-body" id="chat-body"></div>
+        </aside>
+      </div>
 
       <!-- ── Control bar ──────────────────────────────────────── -->
       <footer id="ctrl-bar" aria-label="Stream controls"></footer>
@@ -544,6 +708,9 @@
       let dragSrc      = null;     // channel being dragged in ctrl-bar
       let layoutMode   = 'stage';  // 'stage' | 'grid'
       let stageFullWidth = false;  // full-width override for current staged stream
+      let chatOpen     = false;    // whether chat sidebar is open
+      let chatChannel  = null;     // channel whose chat is shown in sidebar
+      let chatPinned   = false;    // whether sidebar is pinned beside streams (tablet/desktop only)
       const TWITCH_GQL_CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
       const SEARCH_QUERY = `query ChannelTypeahead($q: String!) {
         searchFor(userQuery: $q, platform: "web") {
@@ -568,8 +735,12 @@
           localStorage.setItem('ta_muted',   JSON.stringify([...mutedSet]));
           localStorage.setItem('ta_layout',  layoutMode);
           localStorage.setItem('ta_stage_fullwidth', String(stageFullWidth));
+          localStorage.setItem('ta_chat_open', String(chatOpen));
+          localStorage.setItem('ta_chat_pinned', String(chatPinned));
           if (stageChannel) localStorage.setItem('ta_stage', stageChannel);
           else               localStorage.removeItem('ta_stage');
+          if (chatChannel)  localStorage.setItem('ta_chat_ch', chatChannel);
+          else              localStorage.removeItem('ta_chat_ch');
         } catch (_) {}
       }
 
@@ -580,10 +751,15 @@
           stageChannel = localStorage.getItem('ta_stage') || null;
           layoutMode   = localStorage.getItem('ta_layout') || 'stage';
           stageFullWidth = localStorage.getItem('ta_stage_fullwidth') === 'true';
+          chatOpen     = localStorage.getItem('ta_chat_open') === 'true';
+          chatChannel  = localStorage.getItem('ta_chat_ch') || null;
+          chatPinned   = localStorage.getItem('ta_chat_pinned') === 'true';
           if (stageChannel && !streams.includes(stageChannel)) stageChannel = null;
           if (!stageChannel) stageFullWidth = false;
+          if (chatChannel && !streams.includes(chatChannel)) chatChannel = null;
         } catch (_) {
           streams = []; mutedSet = new Set(); stageChannel = null; layoutMode = 'stage'; stageFullWidth = false;
+          chatOpen = false; chatChannel = null; chatPinned = false;
         }
       }
 
@@ -602,6 +778,7 @@
         updateEmpty();
         applyLayout();
         renderBar();
+        updateChatSidebar();
       }
 
       function removeStream(channel) {
@@ -623,6 +800,7 @@
         updateEmpty();
         applyLayout();
         renderBar();
+        updateChatSidebar();
       }
 
       function toggleMute(channel) {
@@ -686,9 +864,12 @@
           snapToLive(stageChannel);
         }
 
+        // When a stream is staged, follow it in the chat sidebar
+        if (stageChannel) chatChannel = stageChannel;
         save();
         applyLayout();
         renderBar();
+        updateChatSidebar();
       }
 
       function toggleStageFullWidth(channel) {
@@ -1037,6 +1218,19 @@
       // Recompute on container resize
       new ResizeObserver(() => applyLayout()).observe(document.getElementById('streams'));
 
+      // Auto-unpin sidebar when window shrinks to mobile width
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (chatPinned && window.innerWidth <= 600) {
+            chatPinned = false;
+            save();
+            updateChatSidebar();
+          }
+        }, 150);
+      });
+
       // ── Control bar ────────────────────────────────────────────
       function renderBar() {
         const bar = document.getElementById('ctrl-bar');
@@ -1118,6 +1312,7 @@
                 save();
                 applyLayout();
                 renderBar();
+                renderChatTabs();
               }
             }
             dragSrc = null;
@@ -1348,9 +1543,111 @@
         btn.querySelector('.btn-text').textContent = allMuted ? 'Unmute All' : 'Mute All';
       }
 
+      // ── Chat sidebar ───────────────────────────────────────────
+      function openChatSidebar() {
+        chatOpen = true;
+        // Default selection: staged stream → first stream → none
+        if (!chatChannel || !streams.includes(chatChannel)) {
+          chatChannel = stageChannel || streams[0] || null;
+        }
+        save();
+        updateChatSidebar();
+      }
+
+      function closeChatSidebar() {
+        chatOpen   = false;
+        chatPinned = false;
+        save();
+        updateChatSidebar();
+      }
+
+      function toggleChatSidebar() {
+        if (chatOpen) closeChatSidebar(); else openChatSidebar();
+      }
+
+      function setChatChannel(ch) {
+        chatChannel = ch;
+        save();
+        renderChatTabs();
+        renderChatIframe();
+      }
+
+      function toggleChatPin() {
+        if (window.innerWidth <= 600) return; // no pin on mobile
+        chatPinned = !chatPinned;
+        save();
+        updateChatSidebar();
+      }
+
+      function renderChatTabs() {
+        const tabsEl = document.getElementById('chat-tabs');
+        if (!tabsEl) return;
+        tabsEl.innerHTML = streams.map(ch => {
+          const active = ch === chatChannel;
+          return `<button type="button" class="chat-tab${active ? ' active' : ''}" data-ch="${escHtml(ch)}" role="tab" aria-selected="${active}" title="${escHtml(ch)}">${escHtml(ch)}</button>`;
+        }).join('');
+        tabsEl.querySelectorAll('.chat-tab').forEach(btn =>
+          btn.addEventListener('click', () => setChatChannel(btn.dataset.ch)));
+        // Scroll the active tab into view so it's always visible
+        tabsEl.querySelector('.chat-tab.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+      }
+
+      function renderChatIframe() {
+        const body = document.getElementById('chat-body');
+        if (!body) return;
+        if (!chatChannel || !streams.includes(chatChannel)) {
+          body.innerHTML = streams.length === 0
+            ? `<div class="chat-empty"><span class="chat-empty-icon">💬</span><span>Add a stream to view chat</span></div>`
+            : `<div class="chat-empty"><span class="chat-empty-icon">💬</span><span>Select a stream above</span></div>`;
+          return;
+        }
+        const hostname = window.location.hostname || 'localhost';
+        const src = `https://www.twitch.tv/embed/${encodeURIComponent(chatChannel)}/chat?parent=${encodeURIComponent(hostname)}&darkpopout=true`;
+        const existing = body.querySelector('iframe');
+        if (existing && existing.getAttribute('src') === src) return; // no change needed
+        body.innerHTML = `<iframe src="${escHtml(src)}" title="${escHtml(chatChannel)} chat" allow="autoplay; encrypted-media"></iframe>`;
+      }
+
+      function updateChatSidebar() {
+        const sidebar = document.getElementById('chat-sidebar');
+        const btn     = document.getElementById('chat-btn');
+        const pinBtn  = document.getElementById('chat-pin-btn');
+        const app     = document.getElementById('app');
+        if (!sidebar) return;
+
+        // If open but selected channel was removed, fall back
+        if (chatOpen && chatChannel && !streams.includes(chatChannel)) {
+          chatChannel = stageChannel || streams[0] || null;
+        }
+        // If no streams at all, close the sidebar
+        if (streams.length === 0) {
+          chatOpen   = false;
+          chatPinned = false;
+        }
+
+        // Pinned only applies on non-mobile (computed, not mutated here)
+        const effectivelyPinned = chatOpen && chatPinned && window.innerWidth > 600;
+        app?.classList.toggle('chat-pinned', effectivelyPinned);
+
+        sidebar.classList.toggle('open', chatOpen);
+        sidebar.setAttribute('aria-hidden', String(!chatOpen));
+        if (btn) {
+          btn.classList.toggle('chat-active', chatOpen);
+          btn.setAttribute('aria-expanded', String(chatOpen));
+          btn.title = chatOpen ? 'Close chat' : 'Open chat';
+        }
+        if (pinBtn) {
+          pinBtn.classList.toggle('pinned', chatPinned);
+          pinBtn.setAttribute('aria-pressed', String(chatPinned));
+          pinBtn.title = chatPinned ? 'Unpin sidebar' : 'Pin sidebar beside streams';
+        }
+        renderChatTabs();
+        renderChatIframe();
+      }
+
       // ── Export / Import ────────────────────────────────────────
       function exportLayout() {
-        const data = { streams, stage: stageChannel, muted: [...mutedSet], stageFullWidth };
+        const data = { streams, stage: stageChannel, muted: [...mutedSet], stageFullWidth, chatOpen, chatChannel, chatPinned };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
@@ -1376,6 +1673,9 @@
             mutedSet     = new Set(Array.isArray(data.muted) ? data.muted : []);
             stageChannel = data.stage || null;
             stageFullWidth = Boolean(data.stageFullWidth);
+            chatOpen = Boolean(data.chatOpen);
+            chatPinned = Boolean(data.chatPinned) && window.innerWidth > 600;
+            chatChannel = (typeof data.chatChannel === 'string' && data.chatChannel) ? data.chatChannel : null;
 
             data.streams.forEach(ch => {
               if (typeof ch === 'string' && ch.trim()) {
@@ -1385,11 +1685,13 @@
             });
 
             if (stageChannel && !streams.includes(stageChannel)) stageChannel = null;
+            if (chatChannel && !streams.includes(chatChannel)) chatChannel = null;
             if (!stageChannel) stageFullWidth = false;
             save();
             updateEmpty();
             applyLayout();
             renderBar();
+            updateChatSidebar();
           } catch (_) { alert('Invalid layout file.'); }
         };
         reader.readAsText(file);
@@ -1413,6 +1715,7 @@
         applyLayout();
         renderBar();
         refreshLayoutBtn();
+        updateChatSidebar();
 
         // Add-stream form
         document.getElementById('add-form').addEventListener('submit', e => {
@@ -1428,6 +1731,9 @@
         document.getElementById('export-btn').addEventListener('click', exportLayout);
         document.getElementById('mute-all-btn').addEventListener('click', muteAll);
         document.getElementById('layout-btn').addEventListener('click', toggleLayoutMode);
+        document.getElementById('chat-btn').addEventListener('click', toggleChatSidebar);
+        document.getElementById('chat-pin-btn').addEventListener('click', toggleChatPin);
+        document.getElementById('chat-close-btn').addEventListener('click', closeChatSidebar);
         document.getElementById('import-btn').addEventListener('click', () =>
           document.getElementById('import-file').click());
         document.getElementById('import-file').addEventListener('change', e => {
