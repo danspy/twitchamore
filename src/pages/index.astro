@@ -43,6 +43,7 @@
         display: flex;
         flex-direction: column;
         min-height: 100dvh;
+        padding-top: var(--header-h);
         padding-bottom: var(--bar-h);
       }
 
@@ -56,7 +57,11 @@
         background: var(--bg-header);
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
-        z-index: 100;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 200;
       }
 
       .logo {
@@ -423,7 +428,11 @@
         height: var(--bar-h);
         background: var(--bg-header);
         border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
+        position: fixed;
+        top: var(--header-h);
+        left: 0;
+        right: 0;
+        z-index: 190;
       }
       #add-bar.open { display: flex; }
       #add-bar .add-form-wrap { flex: 1; max-width: 100%; }
@@ -577,12 +586,16 @@
       @media (min-width: 601px) {
         #app.chat-pinned .content-wrap {
           flex-direction: row;
+          height: calc(100dvh - var(--header-h) - var(--bar-h));
+          overflow: hidden;
+        }
+        #app.chat-pinned .main {
+          overflow-y: auto;
         }
         #app.chat-pinned #chat-sidebar {
           position: static;
           right: auto;
-          height: auto;
-          align-self: stretch;
+          height: 100%;
           box-shadow: none;
           transition: none;
           flex-shrink: 0;
