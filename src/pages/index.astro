@@ -403,6 +403,27 @@
         flex-shrink: 0;
         cursor: grab;
       }
+      .ctrl-clear-all {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        height: 34px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text-dim);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+        margin-right: 6px;
+        flex-shrink: 0;
+      }
+      .ctrl-clear-all:hover {
+        border-color: var(--text-dim);
+        color: var(--text);
+      }
       .ctrl-item:active { cursor: grabbing; }
       .ctrl-item.is-stage { border-color: var(--accent); }
       .ctrl-item.dragging { opacity: 0.35; }
@@ -803,6 +824,26 @@
         updateChatSidebar();
       }
 
+      function clearAllStreams() {
+        if (streams.length === 0) return;
+        [...streams].forEach(ch => {
+          document.getElementById(`card-${ch}`)?.remove();
+          delete embeds[ch];
+        });
+        streams = [];
+        mutedSet = new Set();
+        stageChannel = null;
+        stageFullWidth = false;
+        chatChannel = null;
+        chatOpen = false;
+        chatPinned = false;
+        save();
+        updateEmpty();
+        applyLayout();
+        renderBar();
+        updateChatSidebar();
+      }
+
       function toggleMute(channel) {
         if (mutedSet.has(channel)) {
           mutedSet.delete(channel);
@@ -827,27 +868,40 @@
         try { player.play(); } catch (_) {}
       }
 
+      function getHeaderOffset() {
+        const header = document.querySelector('.header');
+        if (!(header instanceof HTMLElement)) return 0;
+        return header.offsetHeight;
+      }
+
+      function scrollCardIntoViewWithHeader(channel) {
+        const card = document.getElementById(`card-${channel}`);
+        if (!(card instanceof HTMLElement)) return;
+        const top = window.scrollY + card.getBoundingClientRect().top - getHeaderOffset();
+        window.scrollTo({ top: Math.max(0, top - 2), behavior: 'smooth' });
+      }
+
       function setStage(channel) {
         const prevStage = stageChannel;
         stageChannel = stageChannel === channel ? null : channel;
         if (!stageChannel || stageChannel !== prevStage) stageFullWidth = false;
 
+        let postLayoutScroll = null;
+
         if (stageChannel) {
           if (window.innerWidth >= 900) {
             // Desktop: respect layout mode
             if (layoutMode === 'stage') {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              postLayoutScroll = 'top';
             } else {
-              document.getElementById(`card-${stageChannel}`)
-                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              postLayoutScroll = 'card';
             }
           } else if (window.innerWidth >= 600) {
             // Tablet: stage always at row 1, scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            postLayoutScroll = 'top';
           } else {
             // Mobile: scroll to card
-            document.getElementById(`card-${stageChannel}`)
-              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            postLayoutScroll = 'card';
           }
           // Unmute the staged stream, mute everything else
           streams.forEach(ch => {
@@ -870,16 +924,29 @@
         applyLayout();
         renderBar();
         updateChatSidebar();
+
+        if (postLayoutScroll === 'top') {
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        } else if (postLayoutScroll === 'card' && stageChannel) {
+          requestAnimationFrame(() => {
+            scrollCardIntoViewWithHeader(stageChannel);
+          });
+        }
       }
 
       function toggleStageFullWidth(channel) {
         if (!stageChannel || stageChannel !== channel) return;
-        stageFullWidth = !stageFullWidth;
+        const nextStageFullWidth = !stageFullWidth;
+        stageFullWidth = nextStageFullWidth;
         save();
         applyLayout();
         renderBar();
         if (stageFullWidth && layoutMode === 'grid') {
           window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else if (!nextStageFullWidth && layoutMode === 'grid' && stageChannel) {
+          scrollCardIntoViewWithHeader(stageChannel);
         }
       }
 
@@ -1239,7 +1306,7 @@
         if (streams.length === 0) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
 
         bar.style.display = 'flex';
-        bar.innerHTML = streams.map(ch => {
+        bar.innerHTML = `<button class="ctrl-clear-all" id="clear-all-btn" title="Remove all streams">Clear all</button>${streams.map(ch => {
           const muted  = mutedSet.has(ch);
           const staged = ch === stageChannel;
           return `
@@ -1272,7 +1339,9 @@
                       aria-label="Remove ${escHtml(ch)}"
                       title="Remove stream">✕</button>
             </div>`;
-        }).join('');
+              }).join('')}`;
+
+              document.getElementById('clear-all-btn')?.addEventListener('click', clearAllStreams);
 
         bar.querySelectorAll('.mute-btn').forEach(b =>
           b.addEventListener('click', () => toggleMute(b.dataset.ch)));
@@ -1507,10 +1576,21 @@
 
       // ── Layout mode toggle ─────────────────────────────────────
       function toggleLayoutMode() {
-        layoutMode = layoutMode === 'stage' ? 'grid' : 'stage';
+        const nextLayoutMode = layoutMode === 'stage' ? 'grid' : 'stage';
+        layoutMode = nextLayoutMode;
         save();
         applyLayout();
         refreshLayoutBtn();
+
+        if (nextLayoutMode === 'grid' && stageChannel && streams.includes(stageChannel)) {
+          requestAnimationFrame(() => {
+            scrollCardIntoViewWithHeader(stageChannel);
+          });
+        } else if (nextLayoutMode === 'stage') {
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        }
       }
 
       function refreshLayoutBtn() {
