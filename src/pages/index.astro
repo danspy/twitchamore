@@ -628,6 +628,48 @@
         }
         #chat-sidebar.open { right: 0; }
       }
+
+      /* ── Theater mode ────────────────────────────────────────── */
+      #app.theater {
+        --header-h: 0px;
+        --bar-h: 0px;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      #app.theater .header,
+      #app.theater #ctrl-bar,
+      #app.theater #add-bar { display: none; }
+
+      #theater-btn.theater-active {
+        background: rgba(145,71,255,0.2);
+        border-color: var(--accent);
+        color: var(--text);
+      }
+
+      #theater-exit-btn {
+        display: none;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 300;
+        background: rgba(0,0,0,0.75);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text);
+        cursor: pointer;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        align-items: center;
+        gap: 6px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      #theater-exit-btn:hover,
+      #theater-exit-btn:focus-visible { opacity: 1; outline: none; }
+      #app.theater:hover #theater-exit-btn,
+      #app.theater:focus-within #theater-exit-btn { opacity: 0.35; }
+      #app.theater #theater-exit-btn { display: inline-flex; }
     </style>
   </head>
 
@@ -661,6 +703,7 @@
           <button class="btn btn-primary btn-sm" id="add-toggle-btn" title="Add stream" aria-label="Add stream" aria-expanded="false">+</button>
           <button class="btn btn-ghost btn-sm" id="chat-btn" title="Open chat sidebar" aria-expanded="false" aria-controls="chat-sidebar"><span class="btn-icon">💬</span><span class="btn-text">Chat</span></button>
           <button class="btn btn-ghost btn-sm" id="layout-btn" title="Switch between stage and grid layout"><span class="btn-icon">⊞</span><span class="btn-text">Grid</span></button>
+          <button class="btn btn-ghost btn-sm" id="theater-btn" title="Enter theater mode"><span class="btn-icon">⛶</span><span class="btn-text">Theater</span></button>
           <button class="btn btn-ghost btn-sm" id="mute-all-btn" title="Mute / unmute all streams"><span class="btn-icon">🔇</span><span class="btn-text">Mute All</span></button>
           <button class="btn btn-ghost btn-sm" id="export-btn" title="Export layout to JSON"><span class="btn-icon">⬇</span><span class="btn-text">Export</span></button>
           <button class="btn btn-ghost btn-sm" id="import-btn" title="Import layout from JSON"><span class="btn-icon">⬆</span><span class="btn-text">Import</span></button>
@@ -714,6 +757,9 @@
 
       <!-- ── Control bar ──────────────────────────────────────── -->
       <footer id="ctrl-bar" aria-label="Stream controls"></footer>
+
+      <!-- ── Theater mode exit button ─────────────────────────── -->
+      <button id="theater-exit-btn" title="Exit theater mode" aria-label="Exit theater mode">⛶ Exit Theater</button>
     </div>
 
     <script>
@@ -732,6 +778,7 @@
       let chatOpen     = false;    // whether chat sidebar is open
       let chatChannel  = null;     // channel whose chat is shown in sidebar
       let chatPinned   = false;    // whether sidebar is pinned beside streams (tablet/desktop only)
+      let theaterMode  = false;    // hide header + control bar for immersive viewing
       const TWITCH_GQL_CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
       const SEARCH_QUERY = `query ChannelTypeahead($q: String!) {
         searchFor(userQuery: $q, platform: "web") {
@@ -1602,6 +1649,22 @@
         btn.title = isStage ? 'Switch to 2-column grid' : 'Switch to stage layout';
       }
 
+      // ── Theater mode ───────────────────────────────────────────
+      function toggleTheater() {
+        theaterMode = !theaterMode;
+        document.getElementById('app')?.classList.toggle('theater', theaterMode);
+        refreshTheaterBtn();
+        applyLayout();
+        if (theaterMode) window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+
+      function refreshTheaterBtn() {
+        const btn = document.getElementById('theater-btn');
+        if (!btn) return;
+        btn.classList.toggle('theater-active', theaterMode);
+        btn.title = theaterMode ? 'Exit theater mode' : 'Enter theater mode';
+      }
+
       // ── Mute all ───────────────────────────────────────────────
       function muteAll() {
         if (streams.length === 0) return;
@@ -1811,6 +1874,8 @@
         document.getElementById('export-btn').addEventListener('click', exportLayout);
         document.getElementById('mute-all-btn').addEventListener('click', muteAll);
         document.getElementById('layout-btn').addEventListener('click', toggleLayoutMode);
+        document.getElementById('theater-btn').addEventListener('click', toggleTheater);
+        document.getElementById('theater-exit-btn').addEventListener('click', toggleTheater);
         document.getElementById('chat-btn').addEventListener('click', toggleChatSidebar);
         document.getElementById('chat-pin-btn').addEventListener('click', toggleChatPin);
         document.getElementById('chat-close-btn').addEventListener('click', closeChatSidebar);
