@@ -139,6 +139,7 @@
       .suggest-item:first-child { border-top: none; }
       .suggest-item:hover,
       .suggest-item.active { background: rgba(145,71,255,0.16); }
+      .suggest-item.added { opacity: 0.45; cursor: default; pointer-events: none; }
 
       .suggest-main {
         display: flex;
@@ -473,6 +474,7 @@
         #layout-btn { display: none; }
         .btn-text { display: none; }
         .header { gap: 8px; padding: 0 10px; }
+        #auth-area { display: none; }
 
         /* Prevent mobile browsers from zooming on focused inputs */
         .add-form input {
@@ -629,6 +631,217 @@
         #chat-sidebar.open { right: 0; }
       }
 
+      /* ── Auth area ───────────────────────────────────────────── */
+      #auth-area {
+        display: flex;
+        align-items: center;
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      #login-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s;
+      }
+      #login-btn:hover { background: var(--accent-hov); }
+
+      #user-avatar-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 2px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        transition: box-shadow 0.15s;
+      }
+      #user-avatar-btn:hover { box-shadow: 0 0 0 2px var(--accent); }
+      #user-avatar-btn img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: block;
+      }
+
+      #user-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        min-width: 180px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        z-index: 210;
+        padding: 8px 0;
+      }
+      #user-dropdown.open { display: block; }
+
+      .user-dropdown-name {
+        padding: 6px 14px 10px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #logout-btn {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 14px;
+        background: transparent;
+        border: none;
+        color: var(--text-dim);
+        font-size: 0.82rem;
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.15s, color 0.15s;
+      }
+      #logout-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+
+      /* ── Followed-streams empty state ────────────────────────── */
+      #empty-state.has-recommendations {
+        pointer-events: auto;
+        justify-content: flex-start;
+        padding: 24px 20px 20px;
+        overflow-y: auto;
+        gap: 16px;
+      }
+
+      .follows-heading-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        align-self: flex-start;
+      }
+
+      .follows-heading {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      #follows-refresh-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--text-dim);
+        font-size: 1rem;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 4px;
+        transition: color 0.15s, transform 0.3s;
+      }
+      #follows-refresh-btn:hover { color: var(--text); }
+      #follows-refresh-btn.spinning { animation: spin 0.6s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      #empty-follows-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        width: 100%;
+      }
+
+      .follow-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: border-color 0.15s, transform 0.15s;
+        text-align: left;
+      }
+      .follow-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+
+      .follow-thumb {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #000;
+        overflow: hidden;
+      }
+      .follow-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .follow-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 7px;
+        background: linear-gradient(transparent, rgba(0,0,0,0.75));
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+      .follow-live-badge {
+        background: var(--danger);
+        color: #fff;
+        padding: 1px 6px;
+        border-radius: 3px;
+      }
+      .follow-viewers { color: rgba(255,255,255,0.85); }
+
+      .follow-info {
+        padding: 7px 9px 8px;
+      }
+      .follow-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--text);
+      }
+      .follow-game {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+      }
+
+      .follows-hint {
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        align-self: center;
+      }
+
+      /* Following badge in autocomplete suggestions */
+      .suggest-status.following {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: rgba(145,71,255,0.15);
+      }
+
       /* ── Theater mode ────────────────────────────────────────── */
       #app.theater {
         --header-h: 0px;
@@ -699,6 +912,10 @@
           <div class="search-suggest" id="search-suggest" role="listbox" aria-label="Channel suggestions"></div>
         </div>
 
+        <div id="auth-area">
+          <!-- Populated by JS: login button or avatar+dropdown -->
+        </div>
+
         <div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0;">
           <button class="btn btn-primary btn-sm" id="add-toggle-btn" title="Add stream" aria-label="Add stream" aria-expanded="false">+</button>
           <button class="btn btn-ghost btn-sm" id="chat-btn" title="Open chat sidebar" aria-expanded="false" aria-controls="chat-sidebar"><span class="btn-icon">💬</span><span class="btn-text">Chat</span></button>
@@ -732,12 +949,8 @@
       <!-- ── Main area + Chat sidebar (wrapped for pinned layout) ─ -->
       <div class="content-wrap">
         <main class="main" id="main">
-          <!-- Empty state -->
-          <div id="empty-state">
-            <span class="empty-icon">🎮</span>
-            <p>Add a channel above to start watching!</p>
-            <small>Type a Twitch username and press Enter or click "Add Stream"</small>
-          </div>
+          <!-- Empty state (populated by JS) -->
+          <div id="empty-state"></div>
 
           <!-- Stream cards are inserted here by JS -->
           <div id="streams" class="grid" role="region" aria-label="Active streams"></div>
@@ -773,13 +986,17 @@
       let mutedSet     = new Set();
       let embeds       = {};       // { [ch]: { embed, player } }
       let dragSrc      = null;     // channel being dragged in ctrl-bar
-      let layoutMode   = 'stage';  // 'stage' | 'grid'
+      let layoutMode   = 'grid';   // 'stage' | 'grid'
       let stageFullWidth = false;  // full-width override for current staged stream
       let chatOpen     = false;    // whether chat sidebar is open
       let chatChannel  = null;     // channel whose chat is shown in sidebar
       let chatPinned   = false;    // whether sidebar is pinned beside streams (tablet/desktop only)
       let theaterMode  = false;    // hide header + control bar for immersive viewing
-      const TWITCH_GQL_CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
+      let twitchToken  = null;     // string | null — OAuth access token
+      let twitchUser   = null;     // { id, login, displayName, profileImageUrl } | null
+      let followedLive = [];       // live streams from followed channels
+      const TWITCH_APP_CLIENT_ID  = import.meta.env.PUBLIC_TWITCH_CLIENT_ID || '';
+      const TWITCH_GQL_CLIENT_ID  = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
       const SEARCH_QUERY = `query ChannelTypeahead($q: String!) {
         searchFor(userQuery: $q, platform: "web") {
           channels {
@@ -809,6 +1026,10 @@
           else               localStorage.removeItem('ta_stage');
           if (chatChannel)  localStorage.setItem('ta_chat_ch', chatChannel);
           else              localStorage.removeItem('ta_chat_ch');
+          if (twitchToken)  localStorage.setItem('ta_token', twitchToken);
+          else              localStorage.removeItem('ta_token');
+          if (twitchUser)   localStorage.setItem('ta_user', JSON.stringify(twitchUser));
+          else              localStorage.removeItem('ta_user');
         } catch (_) {}
       }
 
@@ -817,17 +1038,20 @@
           streams      = JSON.parse(localStorage.getItem('ta_streams') || '[]');
           mutedSet     = new Set(JSON.parse(localStorage.getItem('ta_muted') || '[]'));
           stageChannel = localStorage.getItem('ta_stage') || null;
-          layoutMode   = localStorage.getItem('ta_layout') || 'stage';
+          layoutMode   = localStorage.getItem('ta_layout') || 'grid';
           stageFullWidth = localStorage.getItem('ta_stage_fullwidth') === 'true';
           chatOpen     = localStorage.getItem('ta_chat_open') === 'true';
           chatChannel  = localStorage.getItem('ta_chat_ch') || null;
           chatPinned   = localStorage.getItem('ta_chat_pinned') === 'true';
+          twitchToken  = localStorage.getItem('ta_token') || null;
+          try { twitchUser = JSON.parse(localStorage.getItem('ta_user') || 'null'); } catch (_) { twitchUser = null; }
           if (stageChannel && !streams.includes(stageChannel)) stageChannel = null;
           if (!stageChannel) stageFullWidth = false;
           if (chatChannel && !streams.includes(chatChannel)) chatChannel = null;
         } catch (_) {
           streams = []; mutedSet = new Set(); stageChannel = null; layoutMode = 'stage'; stageFullWidth = false;
           chatOpen = false; chatChannel = null; chatPinned = false;
+          twitchToken = null; twitchUser = null;
         }
       }
 
@@ -1468,7 +1692,13 @@
       // ── Helpers ────────────────────────────────────────────────
       function updateEmpty() {
         const es = document.getElementById('empty-state');
-        if (es) es.style.display = streams.length === 0 ? 'flex' : 'none';
+        if (!es) return;
+        if (streams.length === 0) {
+          es.style.display = 'flex';
+          renderEmptyState();
+        } else {
+          es.style.display = 'none';
+        }
       }
 
       function escHtml(str) {
@@ -1477,6 +1707,221 @@
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;');
+      }
+
+      function fmtViewers(n) {
+        if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+        return String(n);
+      }
+
+      // ── Empty state rendering ───────────────────────────────────
+      function renderEmptyState() {
+        const es = document.getElementById('empty-state');
+        if (!es) return;
+
+        if (twitchUser && followedLive.length > 0) {
+          es.classList.add('has-recommendations');
+          es.innerHTML = `
+            <div class="follows-heading-row">
+              <span class="follows-heading">Followed channels — live now</span>
+              <button id="follows-refresh-btn" title="Refresh">↻</button>
+            </div>
+            <div id="empty-follows-grid">
+              ${followedLive.map(s => `
+                <button class="follow-card" data-login="${escHtml(s.login)}" title="Watch ${escHtml(s.displayName)}">
+                  <div class="follow-thumb">
+                    <img src="${escHtml(s.thumbnailUrl)}" alt="${escHtml(s.displayName)} stream thumbnail" loading="lazy">
+                    <div class="follow-overlay">
+                      <span class="follow-live-badge">LIVE</span>
+                      <span class="follow-viewers">👁 ${escHtml(fmtViewers(s.viewerCount))}</span>
+                    </div>
+                  </div>
+                  <div class="follow-info">
+                    <div class="follow-name">${escHtml(s.displayName)}</div>
+                    <div class="follow-game">${escHtml(s.gameName || '')}</div>
+                  </div>
+                </button>`).join('')}
+            </div>
+            <span class="follows-hint">or add any channel using the input above</span>`;
+
+          es.querySelectorAll('.follow-card').forEach(card =>
+            card.addEventListener('click', () => addStream(card.dataset.login)));
+          document.getElementById('follows-refresh-btn')?.addEventListener('click', refreshFollowedStreams);
+
+        } else if (twitchUser && followedLive.length === 0) {
+          es.classList.remove('has-recommendations');
+          es.innerHTML = `
+            <div class="follows-heading-row">
+              <span class="empty-icon">🎮</span>
+              <button id="follows-refresh-btn" title="Refresh">↻</button>
+            </div>
+            <p>No followed channels are live right now</p>
+            <small>Type a Twitch username above to add a stream</small>`;
+          document.getElementById('follows-refresh-btn')?.addEventListener('click', refreshFollowedStreams);
+
+        } else {
+          es.classList.remove('has-recommendations');
+          es.innerHTML = `
+            <span class="empty-icon">🎮</span>
+            <p>Add a channel above to start watching!</p>
+            <small>Type a Twitch username and press Enter or click "Add Stream"</small>`;
+        }
+      }
+
+      // ── Auth UI ────────────────────────────────────────────────
+      function renderAuthUI() {
+        const area = document.getElementById('auth-area');
+        if (!area) return;
+
+        if (!TWITCH_APP_CLIENT_ID) { area.innerHTML = ''; return; }
+
+        if (twitchUser) {
+          area.innerHTML = `
+            <button id="user-avatar-btn" title="${escHtml(twitchUser.displayName)}" aria-label="Account menu" aria-haspopup="true" aria-expanded="false">
+              <img src="${escHtml(twitchUser.profileImageUrl)}" alt="${escHtml(twitchUser.displayName)}">
+            </button>
+            <div id="user-dropdown" role="menu">
+              <div class="user-dropdown-name">${escHtml(twitchUser.displayName)}</div>
+              <button id="logout-btn" role="menuitem">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                Log out
+              </button>
+            </div>`;
+
+          document.getElementById('user-avatar-btn').addEventListener('click', toggleUserDropdown);
+          document.getElementById('logout-btn').addEventListener('click', logout);
+          document.addEventListener('click', closeDropdownOutside);
+        } else {
+          area.innerHTML = `
+            <button id="login-btn" title="Log in with Twitch">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+              Login
+            </button>`;
+          document.getElementById('login-btn').addEventListener('click', loginWithTwitch);
+        }
+      }
+
+      function toggleUserDropdown() {
+        const dropdown = document.getElementById('user-dropdown');
+        const btn = document.getElementById('user-avatar-btn');
+        if (!dropdown) return;
+        const open = dropdown.classList.toggle('open');
+        btn?.setAttribute('aria-expanded', String(open));
+      }
+
+      function closeDropdownOutside(e) {
+        const area = document.getElementById('auth-area');
+        if (area && !area.contains(e.target)) {
+          document.getElementById('user-dropdown')?.classList.remove('open');
+          document.getElementById('user-avatar-btn')?.setAttribute('aria-expanded', 'false');
+        }
+      }
+
+      // ── Twitch OAuth ───────────────────────────────────────────
+      function loginWithTwitch() {
+        const redirectUri = (window.location.origin + window.location.pathname).replace(/\/$/, '');
+        const url = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(TWITCH_APP_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=user%3Aread%3Afollows`;
+        window.location.href = url;
+      }
+
+      async function logout() {
+        document.getElementById('user-dropdown')?.classList.remove('open');
+        if (twitchToken) {
+          try {
+            await fetch(`https://id.twitch.tv/oauth2/revoke?client_id=${encodeURIComponent(TWITCH_APP_CLIENT_ID)}&token=${encodeURIComponent(twitchToken)}`, { method: 'POST' });
+          } catch (_) {}
+        }
+        twitchToken  = null;
+        twitchUser   = null;
+        followedLive = [];
+        stopFollowsAutoRefresh();
+        save();
+        renderAuthUI();
+        renderEmptyState();
+      }
+
+      async function validateAndRestoreSession() {
+        if (!twitchToken || !TWITCH_APP_CLIENT_ID) return;
+        try {
+          const res = await fetch('https://api.twitch.tv/helix/users', {
+            headers: { 'Authorization': `Bearer ${twitchToken}`, 'Client-Id': TWITCH_APP_CLIENT_ID },
+          });
+          if (!res.ok) {
+            console.warn('[TwitchAmore] /helix/users returned', res.status, '— clearing session');
+            twitchToken = null; twitchUser = null; followedLive = []; save(); return;
+          }
+          const data = await res.json();
+          const u = data.data?.[0];
+          if (!u) { twitchToken = null; twitchUser = null; save(); return; }
+          twitchUser = { id: u.id, login: u.login, displayName: u.display_name, profileImageUrl: u.profile_image_url };
+          save();
+          await fetchFollowedStreams();
+        } catch (err) {
+          console.error('[TwitchAmore] validateAndRestoreSession error:', err);
+        }
+      }
+
+      async function handleOAuthCallback() {
+        const hash = window.location.hash;
+        if (!hash.includes('access_token=')) return false;
+        const params = new URLSearchParams(hash.slice(1));
+        const token  = params.get('access_token');
+        if (!token) return false;
+        // Clean token from URL immediately so it isn't bookmarked
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        twitchToken = token;
+        save();
+        await validateAndRestoreSession();
+        return true;
+      }
+
+      async function fetchFollowedStreams() {
+        if (!twitchUser || !twitchToken || !TWITCH_APP_CLIENT_ID) return;
+        try {
+          const res = await fetch(`https://api.twitch.tv/helix/streams/followed?user_id=${encodeURIComponent(twitchUser.id)}&first=100`, {
+            headers: { 'Authorization': `Bearer ${twitchToken}`, 'Client-Id': TWITCH_APP_CLIENT_ID },
+          });
+          if (!res.ok) {
+            console.warn('[TwitchAmore] /helix/streams/followed returned', res.status);
+            return;
+          }
+          const data = await res.json();
+          followedLive = (data.data || []).map(s => ({
+            login:        s.user_login,
+            displayName:  s.user_name,
+            thumbnailUrl: s.thumbnail_url.replace('{width}', '320').replace('{height}', '180'),
+            title:        s.title,
+            gameName:     s.game_name,
+            viewerCount:  s.viewer_count,
+          }));
+          renderEmptyState();
+          startFollowsAutoRefresh();
+        } catch (err) {
+          console.error('[TwitchAmore] fetchFollowedStreams error:', err);
+        }
+      }
+
+      let followsRefreshTimer = null;
+      const FOLLOWS_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
+
+      async function refreshFollowedStreams() {
+        const btn = document.getElementById('follows-refresh-btn');
+        btn?.classList.add('spinning');
+        await fetchFollowedStreams();
+        btn?.classList.remove('spinning');
+      }
+
+      function startFollowsAutoRefresh() {
+        stopFollowsAutoRefresh();
+        if (!twitchUser) return;
+        followsRefreshTimer = setInterval(() => {
+          // Only refresh when the empty state is actually visible
+          if (streams.length === 0) fetchFollowedStreams();
+        }, FOLLOWS_REFRESH_INTERVAL);
+      }
+
+      function stopFollowsAutoRefresh() {
+        if (followsRefreshTimer) { clearInterval(followsRefreshTimer); followsRefreshTimer = null; }
       }
 
       function setupChannelSuggest(inputId, listId, onPick = null) {
@@ -1501,15 +1946,66 @@
         function setActive(index) {
           const items = [...listEl.querySelectorAll('.suggest-item')];
           items.forEach((el, i) => el.classList.toggle('active', i === index));
+          items[index]?.scrollIntoView({ block: 'nearest' });
+        }
+
+        function nextSelectableIndex(from, dir) {
+          const len = results.length;
+          let i = (from + dir + len) % len;
+          let steps = 0;
+          while (streams.includes(results[i]?.login) && steps < len) {
+            i = (i + dir + len) % len;
+            steps++;
+          }
+          return streams.includes(results[i]?.login) ? -1 : i;
         }
 
         function pick(index) {
           const item = results[index];
-          if (!item) return;
+          if (!item || streams.includes(item.login)) return;
           addStream(item.login);
           inputEl.value = '';
           closeSuggest();
           if (typeof onPick === 'function') onPick();
+        }
+
+        function renderResults() {
+          if (!results.length) {
+            listEl.innerHTML = '<div class="suggest-empty">No channels found</div>';
+            return;
+          }
+          listEl.innerHTML = results.map((item, i) => {
+            const isAdded = streams.includes(item.login);
+            const badge = item.isFollowing
+              ? `<span class="suggest-status following">Following</span>`
+              : `<span class="suggest-status${item.isLive ? ' live' : ''}">${item.isLive ? 'LIVE' : 'OFFLINE'}</span>`;
+            return `
+              <button type="button" class="suggest-item${isAdded ? ' added' : ''}" data-index="${i}" role="option" aria-selected="false" ${isAdded ? 'aria-disabled="true" title="Already added"' : ''}>
+                <span class="suggest-main">
+                  <span class="suggest-name">${escHtml(item.displayName)}</span>
+                  <span class="suggest-login">@${escHtml(item.login)}</span>
+                </span>
+                ${isAdded ? `<span class="suggest-status">Added</span>` : badge}
+              </button>`;
+          }).join('');
+          [...listEl.querySelectorAll('.suggest-item:not(.added)')].forEach(btn => {
+            btn.addEventListener('click', () => pick(Number(btn.getAttribute('data-index'))));
+          });
+          activeIndex = -1;
+        }
+
+        function renderFollowedSuggest(filter) {
+          if (followedLive.length === 0) return;
+          results = followedLive
+            .filter(s => !filter || s.login.includes(filter) || s.displayName.toLowerCase().includes(filter))
+            .map(s => ({ login: s.login, displayName: s.displayName, isLive: true, isFollowing: true }));
+          if (!results.length) {
+            listEl.innerHTML = '<div class="suggest-empty">No followed channels match</div>';
+            listEl.classList.add('open');
+            return;
+          }
+          listEl.classList.add('open');
+          renderResults();
         }
 
         async function fetchSuggest(query) {
@@ -1536,50 +2032,46 @@
 
             const edges = payload?.data?.searchFor?.channels?.edges || [];
             const seen = new Set();
-            results = edges
+
+            // Prepend matching followed live streams
+            const followedMatches = followedLive
+              .filter(s => s.login.includes(query) || s.displayName.toLowerCase().includes(query))
+              .map(s => ({ login: s.login, displayName: s.displayName, isLive: true, isFollowing: true }));
+            followedMatches.forEach(s => seen.add(s.login));
+
+            const gqlResults = edges
               .map(e => e?.item)
               .filter(Boolean)
               .map(item => ({
                 login: item.login,
                 displayName: item.displayName || item.login,
                 isLive: Boolean(item.stream?.id),
+                isFollowing: false,
               }))
               .filter(item => {
                 if (!item.login || seen.has(item.login)) return false;
                 seen.add(item.login);
                 return true;
               })
-              .slice(0, 8);
+              .slice(0, 8 - followedMatches.length);
 
-            if (!results.length) {
-              listEl.innerHTML = '<div class="suggest-empty">No channels found</div>';
-              return;
-            }
-
-            listEl.innerHTML = results.map((item, i) => `
-              <button type="button" class="suggest-item" data-index="${i}" role="option" aria-selected="false">
-                <span class="suggest-main">
-                  <span class="suggest-name">${escHtml(item.displayName)}</span>
-                  <span class="suggest-login">@${escHtml(item.login)}</span>
-                </span>
-                <span class="suggest-status${item.isLive ? ' live' : ''}">${item.isLive ? 'LIVE' : 'OFFLINE'}</span>
-              </button>
-            `).join('');
-
-            [...listEl.querySelectorAll('.suggest-item')].forEach(btn => {
-              btn.addEventListener('click', () => pick(Number(btn.getAttribute('data-index'))));
-            });
-            activeIndex = -1;
+            results = [...followedMatches, ...gqlResults];
+            renderResults();
           } catch (_) {
             if (currentReq !== reqId) return;
             listEl.innerHTML = '<div class="suggest-empty">Search is currently unavailable</div>';
           }
         }
 
+        input.addEventListener('focus', () => {
+          if (inputEl.value.trim().length === 0) renderFollowedSuggest('');
+        });
+
         input.addEventListener('input', () => {
           clearTimeout(timer);
           const query = inputEl.value.trim().toLowerCase();
-          if (query.length < 2) { closeSuggest(); return; }
+          if (query.length === 0) { renderFollowedSuggest(''); return; }
+          if (query.length === 1) { renderFollowedSuggest(query); return; }
           timer = setTimeout(() => fetchSuggest(query), 220);
         });
 
@@ -1588,14 +2080,14 @@
 
           if (e.key === 'ArrowDown') {
             e.preventDefault();
-            activeIndex = (activeIndex + 1) % results.length;
+            activeIndex = nextSelectableIndex(activeIndex, 1);
             setActive(activeIndex);
             return;
           }
 
           if (e.key === 'ArrowUp') {
             e.preventDefault();
-            activeIndex = (activeIndex - 1 + results.length) % results.length;
+            activeIndex = nextSelectableIndex(activeIndex, -1);
             setActive(activeIndex);
             return;
           }
@@ -1841,7 +2333,7 @@
       }
 
       // ── Init ───────────────────────────────────────────────────
-      function init() {
+      async function init() {
         load();
         let closeDesktopSuggest = () => {};
         let closeMobileSuggest = () => {};
@@ -1859,6 +2351,14 @@
         renderBar();
         refreshLayoutBtn();
         updateChatSidebar();
+
+        // Auth: handle OAuth callback or restore saved session
+        const wasCallback = await handleOAuthCallback();
+        if (!wasCallback && twitchToken) {
+          await validateAndRestoreSession();
+        }
+        renderAuthUI();
+        renderEmptyState();
 
         // Add-stream form
         document.getElementById('add-form').addEventListener('submit', e => {
