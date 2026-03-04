@@ -1915,10 +1915,7 @@
       function startFollowsAutoRefresh() {
         stopFollowsAutoRefresh();
         if (!twitchUser) return;
-        followsRefreshTimer = setInterval(() => {
-          // Only refresh when the empty state is actually visible
-          if (streams.length === 0) fetchFollowedStreams();
-        }, FOLLOWS_REFRESH_INTERVAL);
+        followsRefreshTimer = setInterval(fetchFollowedStreams, FOLLOWS_REFRESH_INTERVAL);
       }
 
       function stopFollowsAutoRefresh() {
@@ -2064,7 +2061,17 @@
           }
         }
 
+        let lastFollowFetch = 0;
         input.addEventListener('focus', () => {
+          if (twitchUser) {
+            const now = Date.now();
+            if (now - lastFollowFetch > 30_000) {
+              lastFollowFetch = now;
+              fetchFollowedStreams().then(() => {
+                if (inputEl.value.trim().length === 0) renderFollowedSuggest('');
+              });
+            }
+          }
           if (inputEl.value.trim().length === 0) renderFollowedSuggest('');
         });
 
